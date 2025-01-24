@@ -13,3 +13,7 @@ opt-level = 3
 
 [dependencies]
 bevy = { version = "0.15.1", features = ["dynamic_linking"] }
+bevy_water = "0.15.2"
+
+[target.wasm32-unknown-unknown]
+runner = "wasm-server-runner"
