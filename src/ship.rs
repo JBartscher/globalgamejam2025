@@ -1,9 +1,11 @@
 use std::time::Duration;
 use crate::GameState;
 use bevy::prelude::*;
+use bevy::reflect::List;
 use bevy_asset_loader::prelude::*;
 use bevy_water::WaterParam;
 use rand::prelude::*;
+use crate::collision::Collider;
 
 pub struct ShipPlugin;
 
@@ -38,7 +40,7 @@ impl ShipAssets {
 
 #[derive(Component)]
 #[require(Transform)]
-struct Ship {
+pub(crate) struct Ship {
     water_line: f32,
     front: Vec3,
     back_left: Vec3,
@@ -81,9 +83,9 @@ impl Ship {
 /// generates a random point in bounds to the map
 fn point_on_map() -> f32{
     let mut rng = rand::thread_rng();
-    let rand_num = rng.gen_range(0..=255);
-    // Shift the range to be between -125 and 125
-    let rand_num = rand_num - 125;
+    let rand_num = rng.gen_range(0..=254);
+    // Shift the range to be between -124 and 124
+    let rand_num = rand_num - 124;
     rand_num as f32
 }
 
@@ -92,22 +94,15 @@ impl Command for Ship {
 
         if let Some(ships)= world.get_resource::<ShipAssets>(){
 
-            let mut transform_1 = Transform::from_xyz(0.0, 0.0, 0.0);
-            transform_1.scale = Vec3::new(2., 2., 2.);
-
             let mut control_points : Vec<Vec3>  = Vec::new();
             for _ in 0..5 {
-                control_points.push( Vec3::new(point_on_map(), 0., point_on_map()))
+                control_points.push( Vec3::new(point_on_map(), -0.2, point_on_map()))
             }
+            let curve = CubicCardinalSpline::new_catmull_rom(control_points.clone()).to_curve_cyclic().unwrap();
 
-            let curve = CubicCardinalSpline::new_catmull_rom(control_points).to_curve_cyclic().unwrap();
-
-            let mut control_points : Vec<Vec3>  = Vec::new();
-            for _ in 0..5 {
-                control_points.push( Vec3::new(point_on_map(), 0., point_on_map()))
-            }
-
-            let curve = CubicCardinalSpline::new_catmull_rom(control_points).to_curve_cyclic().unwrap();
+            let first_pos: Vec3 = control_points[0];
+            let mut transofrm = Transform::from_translation(first_pos);
+            transofrm.scale = Vec3::new(2., 2., 2.);
 
             world.spawn((
                 SceneRoot(
@@ -116,8 +111,9 @@ impl Command for Ship {
                     // asset_server.load(GltfAssetLabel::Scene(0).from_asset("3d/ships/boat-sail-b.glb")),
                 ),
                 Ship::new(-0.100, -3., 3.0, -2.0, 2.0),
-                transform_1,
-                PathFollow{ curve, t: 0.0 }
+                transofrm,
+                PathFollow{ curve, t: 0.0 },
+                Collider{radius: 5.}
             )).with_children(|parent| {
                 parent.spawn((
                     PointLight {
@@ -142,7 +138,7 @@ struct ShipSpawnManager {
 impl Default for ShipSpawnManager{
     fn default() -> Self {
         Self{
-            spawn_timer: Timer::new(Duration::from_secs(5), TimerMode::Repeating),
+            spawn_timer: Timer::new(Duration::from_secs(10), TimerMode::Repeating),
             current_ships: 1,
             max_ships: 5,
         }

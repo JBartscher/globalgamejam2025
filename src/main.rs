@@ -1,6 +1,7 @@
 mod camera;
 mod map;
 mod ship;
+mod collision;
 
 use bevy::color::palettes::css::WHITE_SMOKE;
 use crate::ship::ShipAssets;
@@ -10,6 +11,7 @@ use bevy::utils::tracing::Instrument;
 use bevy::pbr::{DirectionalLightShadowMap};
 use bevy_asset_loader::prelude::*;
 use bevy_rand::prelude::*;
+use crate::collision::CollisionPlugin;
 use crate::map::{MapAssets, MapPlugin};
 use crate::ship::ShipPlugin;
 
@@ -40,6 +42,7 @@ fn main() {
         .add_plugins(PanCameraPlugin)
         .add_plugins(MapPlugin)
         .add_plugins(ShipPlugin)
+        .add_plugins(CollisionPlugin)
 
         .add_plugins(EntropyPlugin::<WyRand>::default())
 
@@ -49,7 +52,6 @@ fn main() {
 
         .run();
 }
-
 
 fn setup(mut commands: Commands) {
     // ambient light
