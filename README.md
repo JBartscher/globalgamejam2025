@@ -13,3 +13,10 @@ wasm-bindgen --no-typescript --target web \
     --out-name "mygame" \
     ./target/wasm32-unknown-unknown/release/mygame.wasm
 ```
+
+
+### Assets:
+* Audio - DeepDive https://opengameart.org/content/deep-dive-0 
+* Fonts - kenny.nl - kenny-fonts https://kenney.nl/assets/kenney-fonts
+* 3D Modelle - kenny.nl - watercraft-kit https://kenney.nl/assets/watercraft-kit
+* 3D Modelle - kenny.nl - priate-kit https://kenney.nl/assets/pirate-kit

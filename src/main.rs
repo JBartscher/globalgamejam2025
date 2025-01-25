@@ -3,6 +3,7 @@ mod map;
 mod ship;
 mod collision;
 mod ui;
+mod interaction;
 
 use bevy::color::palettes::css::WHITE_SMOKE;
 use crate::ship::ShipAssets;
@@ -38,7 +39,7 @@ fn main() {
             .load_collection::<ShipAssets>()
             .load_collection::<MapAssets>()
         )
-
+        .add_plugins(MeshPickingPlugin)
         .add_plugins(PanCameraPlugin)
         .add_plugins(MapPlugin)
         .add_plugins(ShipPlugin)

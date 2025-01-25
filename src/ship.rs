@@ -76,6 +76,7 @@ struct PathFollow {
     t: f32,
 }
 
+
 impl Ship {
     pub fn new(water_line: f32, front: f32, back: f32, left: f32, right: f32) -> Self {
         Self {
@@ -124,14 +125,14 @@ impl Command for Ship {
                 .unwrap();
 
             let first_pos: Vec3 = control_points[0];
-            let mut transform = Transform::from_translation(first_pos);
+            let mut transform = Transform::from_translation(first_pos).with_scale(Vec3::new(2., 2., -2.));
 
             let ship_type = ShipType::sample(ship_assets);
             let (h, r) = match ship_type {
                 ShipType::SailShipA(h) | ShipType::SailShipB(h) => (h, Rect::new(0., 0., 4., 6.)),
                 ShipType::ContainerShipA(h)
                 | ShipType::ContainerShipB(h)
-                | ShipType::ContainerShipC(h) => (h, Rect::new(0., 0., 4., 6.)),
+                | ShipType::ContainerShipC(h) => (h, Rect::new(0., 0., 8., 12.)),
             };
 
             world
@@ -140,6 +141,9 @@ impl Command for Ship {
                     PathFollow { curve, t: 0.0 },
                     Collider { rect: r },
                 ))
+
+                .observe(on_drag_follow)
+
                 .with_children(|parent| {
                     parent
                         .spawn((
@@ -199,11 +203,16 @@ fn draw_follow_path(path_follow_query: Query<&PathFollow>, mut gizmos: Gizmos) {
     for (p) in &path_follow_query {
         // Scale resolution with curve length so it doesn't degrade as the length increases.
         //  let resolution = 100 * p.curve. .len();
-        gizmos.linestrip(p.curve.iter_positions(100), Color::srgb(1.0, 0.5, 0.2));
+        gizmos.linestrip(
+            p.curve.iter_positions(100),
+            Color::srgba(0.1, 0.5, 0.2, 0.5),
+        );
     }
 }
 
-pub fn move_ship(mut query: Query<(&mut PathFollow, &mut Transform)>, time: Res<Time>) {
+pub fn move_ship(
+    mut query: Query<(&mut PathFollow, &mut Transform)>,
+    time: Res<Time>) {
     for (mut path_follow, mut ship_transform) in query.iter_mut() {
         path_follow.t += 0.1 * time.delta_secs();
 
@@ -212,15 +221,28 @@ pub fn move_ship(mut query: Query<(&mut PathFollow, &mut Transform)>, time: Res<
         }
 
         let pos = path_follow.curve.position(path_follow.t);
-        ship_transform.translation = pos;
-        ship_transform.look_at(path_follow.curve.position(path_follow.t - 0.01), Dir3::Y);
+
+        ship_transform
+            .translation
+            .smooth_nudge(&pos, 5.0, time.delta_secs());
+
+        ship_transform.look_at(path_follow.curve.position(path_follow.t + 0.01), Dir3::Y)
+    }
+}
+
+fn on_drag_follow(
+    drag: Trigger<Pointer<Drag>>,
+    mut transforms: Query<&mut Transform, With<PathFollow>>,
+) {
+    if let Ok(mut transform) = transforms.get_mut(drag.entity()) {
+        transform.translation.x += drag.delta.x * 0.15;
+        transform.translation.z += drag.delta.y * 0.15;
     }
 }
 
 pub fn update_ships(
     water: WaterParam,
     mut ships: Query<(&Ship, &mut Transform, &GlobalTransform)>,
-    mut gizmos: Gizmos,
 ) {
     for (ship, mut transform, global) in ships.iter_mut() {
         let pos = global.translation();
@@ -252,10 +274,7 @@ fn cleanup_ships(mut commands: Commands, query: Query<Entity, With<Ship>>) {
     commands.remove_resource::<ShipSpawnManager>();
 }
 
-fn ship_collide_event(
-    mut ship_collision: EventReader<CollisionEvent>,
-    mut commands: Commands
-) {
+fn ship_collide_event(mut ship_collision: EventReader<CollisionEvent>, mut commands: Commands) {
     for ev in ship_collision.read() {
         eprintln!("Entity {:?} collided with {:?}", ev.entity_a, ev.entity_b);
     }
