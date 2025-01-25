@@ -2,6 +2,8 @@ mod camera;
 mod map;
 mod ship;
 
+use bevy::color::palettes::css::WHITE_SMOKE;
+use bevy::color::palettes::tailwind::YELLOW_300;
 use crate::ship::ShipAssets;
 use crate::camera::PanCameraPlugin;
 use bevy::prelude::*;
@@ -40,20 +42,18 @@ fn main() {
 
         .insert_resource(DirectionalLightShadowMap { size: 4048 })
 
-        .add_systems(Startup, setup)
+        .add_systems(OnEnter(GameState::Game), setup)
 
         .run();
 }
 
 
 
-fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
-    // light
-    commands.spawn((
-        PointLight {
-            shadows_enabled: false,
-            ..default()
-        },
-        Transform::from_xyz(4.0, 8.0, 4.0),
-    ));
+fn setup(mut commands: Commands) {
+    // ambient light
+    commands.insert_resource(AmbientLight {
+        color: WHITE_SMOKE.into(),
+        brightness: 80.,
+    });
+
 }

@@ -93,14 +93,21 @@ fn spawn_ship(
         Ship::new(-0.100, -3., 3.0, -2.0, 2.0),
         transform_1,
         PathFollow{ curve, t: 0.0 }
-    ));
+    )).with_children(|parent| {
+        parent.spawn((
+            PointLight {
+                shadows_enabled: false,
+                ..default()
+            },
+            Transform::from_xyz(0.0, 5.0, 0.0),
+        ));
+    });
     
 }
 
 /// This system uses gizmos to draw the current [`Curve`] by breaking it up into a large number
 /// of line segments.
 fn draw_follow_path(path_follow_query: Query<&PathFollow>, mut gizmos: Gizmos) {
-
     for (p) in &path_follow_query {
         // Scale resolution with curve length so it doesn't degrade as the length increases.
        //  let resolution = 100 * p.curve. .len();
@@ -109,12 +116,21 @@ fn draw_follow_path(path_follow_query: Query<&PathFollow>, mut gizmos: Gizmos) {
             Color::srgb(1.0, 0.5, 0.2),
         );
     }
-
 }
 
 
-pub fn move_ship(mut ships: Query<(&Ship, &mut Transform)>){
+pub fn move_ship(mut query: Query<(&mut PathFollow, &mut Transform), (With<Ship>)>, time: Res<Time>,){
+    for (mut path_follow, mut ship_transform) in query.iter_mut() {
+        path_follow.t += 0.1 * time.delta_secs();
 
+        if path_follow.t > path_follow.curve.segments().len() as f32 {
+            path_follow.t = 0.0;
+        }
+
+        let pos = path_follow.curve.position(path_follow.t);
+        ship_transform.translation = pos;
+        ship_transform.look_at(path_follow.curve.position(path_follow.t - 0.01), Dir3::Y);
+    }
 }
 
 pub fn update_ships(
@@ -149,6 +165,7 @@ impl Plugin for ShipPlugin {
             .add_systems(OnEnter(GameState::Game), spawn_ship)
             .add_systems(Update, update_ships.run_if(in_state(GameState::Game)))
             .add_systems(Update, draw_follow_path.run_if(in_state(GameState::Game)))
+            .add_systems(Update, move_ship.run_if(in_state(GameState::Game)))
         ;
     }
 }

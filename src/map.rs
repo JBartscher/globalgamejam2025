@@ -11,11 +11,11 @@ pub const MAP_SIZE: u32 = 256;
 
 #[derive(AssetCollection, Resource)]
 pub struct MapAssets {
-    #[asset(path = "3d/environment/rocks-a.glb")]
+    #[asset(path = "3d/environment/rocks-a.glb#Scene0")]
     rocks_a: Handle<Scene>,
-    #[asset(path = "3d/environment/rocks-b.glb")]
+    #[asset(path = "3d/environment/rocks-b.glb#Scene0")]
     rocks_b: Handle<Scene>,
-    #[asset(path = "3d/environment/rocks-c.glb")]
+    #[asset(path = "3d/environment/rocks-c.glb#Scene0")]
     rocks_c: Handle<Scene>
 }
 
