@@ -16,7 +16,10 @@ impl Plugin for CollisionPlugin {
     }
 }
 
-fn check_collision(mut query: Query<(Entity, &GlobalTransform, &Collider)>) {
+fn check_collision(
+    mut query: Query<(Entity, &GlobalTransform, &Collider)>,
+    mut next_state: ResMut<NextState<GameState>>,
+) {
     for (entity_a, transform_a, mut collider_a) in query.iter() {
         for (entity_b, transform_b, mut collider_b) in query.iter() {
             let distance = transform_a
@@ -26,7 +29,8 @@ fn check_collision(mut query: Query<(Entity, &GlobalTransform, &Collider)>) {
                 continue;
             }
             if distance < (collider_a.radius + collider_b.radius) {
-                print!("Collision!")
+                print!("Collision!");
+                next_state.set(GameState::GameOver);
             }
         }
     }

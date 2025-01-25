@@ -2,6 +2,7 @@ mod camera;
 mod map;
 mod ship;
 mod collision;
+mod ui;
 
 use bevy::color::palettes::css::WHITE_SMOKE;
 use crate::ship::ShipAssets;
@@ -14,8 +15,7 @@ use bevy_rand::prelude::*;
 use crate::collision::CollisionPlugin;
 use crate::map::{MapAssets, MapPlugin};
 use crate::ship::ShipPlugin;
-
-
+use crate::ui::UiPlugin;
 
 #[derive(Clone, Eq, PartialEq, Debug, Hash, Default, States)]
 pub enum GameState {
@@ -43,6 +43,7 @@ fn main() {
         .add_plugins(MapPlugin)
         .add_plugins(ShipPlugin)
         .add_plugins(CollisionPlugin)
+        .add_plugins(UiPlugin)
 
         .add_plugins(EntropyPlugin::<WyRand>::default())
 

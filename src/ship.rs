@@ -204,6 +204,7 @@ impl Plugin for ShipPlugin {
     fn build(&self, app: &mut App) {
         app
             .add_systems(OnEnter(GameState::Game), setup)
+            .add_systems(OnEnter(GameState::GameOver), cleanup_ships)
             .add_systems(Update, spawn_ships.run_if(in_state(GameState::Game)))
             .add_systems(Update, update_ships.run_if(in_state(GameState::Game)))
             .add_systems(Update, draw_follow_path.run_if(in_state(GameState::Game)))
@@ -215,4 +216,11 @@ impl Plugin for ShipPlugin {
 fn setup( mut commands: Commands,){
     commands.queue(Ship::new(-0.100, -3., 3.0, -2.0, 2.0));
     commands.init_resource::<ShipSpawnManager>();
+}
+
+fn cleanup_ships(mut commands: Commands, query: Query<Entity, With<Ship>>) {
+    for entity in query.iter() {
+        commands.entity(entity).despawn_recursive();
+    }
+    commands.remove_resource::<ShipSpawnManager>();
 }
