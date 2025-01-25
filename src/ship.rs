@@ -1,8 +1,8 @@
 use crate::GameState;
-use bevy::color::palettes::basic::YELLOW;
 use bevy::prelude::*;
-use bevy_asset_loader::asset_collection::AssetCollection;
+use bevy_asset_loader::prelude::*;
 use bevy_water::WaterParam;
+use rand::prelude::*;
 
 pub struct ShipPlugin;
 
@@ -21,7 +21,18 @@ pub struct ShipAssets {
 }
 
 impl ShipAssets {
-    pub fn random() {}
+    fn sample(&self) -> Handle<Scene> {
+        let mut rng = rand::thread_rng();
+        let index: u8 = rng.gen_range(0..4);
+        match index {
+            0 => self.sail_a.clone(),
+            1 => self.sail_b.clone(),
+            2 => self.cargo_a.clone(),
+            3 => self.cargo_b.clone(),
+            4 => self.cargo_c.clone(),
+            _ => unreachable!(),
+        }
+    }
 }
 
 #[derive(Component)]
@@ -66,43 +77,64 @@ impl Ship {
     }
 }
 
+fn point_on_map() -> f32{
+    let mut rng = rand::thread_rng();
+    let rand_num = rng.gen_range(0..=255);
+    // Shift the range to be between -125 and 125
+    let rand_num = rand_num - 125;
+    rand_num as f32
+}
+
+impl Command for Ship {
+    fn apply(self, world: &mut World) {
+
+        if let Some(ships)= world.get_resource::<ShipAssets>(){
+
+            let mut transform_1 = Transform::from_xyz(0.0, 0.0, 0.0);
+            transform_1.scale = Vec3::new(2., 2., 2.);
+
+            let mut control_points : Vec<Vec3>  = Vec::new();
+            for _ in 0..5 {
+                control_points.push( Vec3::new(point_on_map(), 0., point_on_map()))
+            }
+
+            let curve = CubicCardinalSpline::new_catmull_rom(control_points).to_curve_cyclic().unwrap();
+
+            let mut control_points : Vec<Vec3>  = Vec::new();
+            for _ in 0..5 {
+                control_points.push( Vec3::new(point_on_map(), 0., point_on_map()))
+            }
+
+            let curve = CubicCardinalSpline::new_catmull_rom(control_points).to_curve_cyclic().unwrap();
+
+            world.spawn((
+                SceneRoot(
+                    // GltfAssetLabel::Scene(0).clone_from(ship_assets.sail_a.clone()),
+                    ships.sample().into(),
+                    // asset_server.load(GltfAssetLabel::Scene(0).from_asset("3d/ships/boat-sail-b.glb")),
+                ),
+                Ship::new(-0.100, -3., 3.0, -2.0, 2.0),
+                transform_1,
+                PathFollow{ curve, t: 0.0 }
+            )).with_children(|parent| {
+                parent.spawn((
+                    PointLight {
+                        shadows_enabled: false,
+                        ..default()
+                    },
+                    Transform::from_xyz(0.0, 5.0, 0.0),
+                ));
+            });
+        }
+
+    }
+}
+
+
 fn spawn_ship(
-    mut commands: Commands,
-    ship_assets: Res<ShipAssets>,
-    asset_server: Res<AssetServer>,
+    mut commands: Commands
 ) {
-    let mut transform_1 = Transform::from_xyz(0.0, 0.0, 0.0);
-    transform_1.scale = Vec3::new(2., 2., 2.);
-
-    let control_points = vec![
-        Vec3::new(0.0, 0.0, 0.0),
-        Vec3::new(125.0, 0.0, 0.0),
-        Vec3::new(0.0, 0.0, -125.0),
-        Vec3::new(-125.0, 0.0, 0.0),
-    ];
-    // Create the CubicBSpline -> CubicCurve<Vec3>
-    let curve = CubicCardinalSpline::new_catmull_rom(control_points).to_curve_cyclic().unwrap();
-
-    // sail a
-    commands.spawn((
-        SceneRoot(
-            // GltfAssetLabel::Scene(0).clone_from(ship_assets.sail_a.clone()),
-            ship_assets.sail_a.clone().into(),
-            // asset_server.load(GltfAssetLabel::Scene(0).from_asset("3d/ships/boat-sail-b.glb")),
-        ),
-        Ship::new(-0.100, -3., 3.0, -2.0, 2.0),
-        transform_1,
-        PathFollow{ curve, t: 0.0 }
-    )).with_children(|parent| {
-        parent.spawn((
-            PointLight {
-                shadows_enabled: false,
-                ..default()
-            },
-            Transform::from_xyz(0.0, 5.0, 0.0),
-        ));
-    });
-    
+    commands.queue(Ship::new(-0.100, -3., 3.0, -2.0, 2.0))
 }
 
 /// This system uses gizmos to draw the current [`Curve`] by breaking it up into a large number
@@ -142,20 +174,20 @@ pub fn update_ships(
         let pos = global.translation();
         ship.update(&water, pos, &mut transform);
 
-        // front
-        gizmos.arrow(ship.front + transform.translation, ship.front + transform.translation + Vec3::new(0., 10., 0.), YELLOW);
-        // back left
-        gizmos.arrow(
-            ship.back_left + transform.translation,
-            ship.back_left + transform.translation + Vec3::new(0., 10., 0.),
-            YELLOW,
-        );
-        // back right
-        gizmos.arrow(
-            ship.back_right + transform.translation,
-            ship.back_right + transform.translation + Vec3::new(0., 10., 0.),
-            YELLOW,
-        );
+        // // front
+        // gizmos.arrow(ship.front + transform.translation, ship.front + transform.translation + Vec3::new(0., 10., 0.), YELLOW);
+        // // back left
+        // gizmos.arrow(
+        //     ship.back_left + transform.translation,
+        //     ship.back_left + transform.translation + Vec3::new(0., 10., 0.),
+        //     YELLOW,
+        // );
+        // // back right
+        // gizmos.arrow(
+        //     ship.back_right + transform.translation,
+        //     ship.back_right + transform.translation + Vec3::new(0., 10., 0.),
+        //     YELLOW,
+        // );
     }
 }
 

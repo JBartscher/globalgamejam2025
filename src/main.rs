@@ -3,15 +3,16 @@ mod map;
 mod ship;
 
 use bevy::color::palettes::css::WHITE_SMOKE;
-use bevy::color::palettes::tailwind::YELLOW_300;
 use crate::ship::ShipAssets;
 use crate::camera::PanCameraPlugin;
 use bevy::prelude::*;
 use bevy::utils::tracing::Instrument;
 use bevy::pbr::{DirectionalLightShadowMap};
 use bevy_asset_loader::prelude::*;
+use bevy_rand::prelude::*;
 use crate::map::{MapAssets, MapPlugin};
 use crate::ship::ShipPlugin;
+
 
 
 #[derive(Clone, Eq, PartialEq, Debug, Hash, Default, States)]
@@ -40,13 +41,14 @@ fn main() {
         .add_plugins(MapPlugin)
         .add_plugins(ShipPlugin)
 
+        .add_plugins(EntropyPlugin::<WyRand>::default())
+
         .insert_resource(DirectionalLightShadowMap { size: 4048 })
 
         .add_systems(OnEnter(GameState::Game), setup)
 
         .run();
 }
-
 
 
 fn setup(mut commands: Commands) {

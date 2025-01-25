@@ -97,7 +97,7 @@ fn spawn_camera(mut commands: Commands) {
     camera.state.radius = 50.0;
     camera.state.pitch = -45.0f32.to_radians();
     camera.state.yaw = 45.0f32.to_radians();
-    commands.spawn(camera);
+    commands.spawn((camera));
 }
 
 use std::f32::consts::{FRAC_PI_2, PI, TAU};
