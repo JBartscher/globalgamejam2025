@@ -6,6 +6,7 @@ use bevy_asset_loader::prelude::*;
 use bevy_water::WaterParam;
 use rand::prelude::*;
 use std::time::Duration;
+use crate::camera::{PanCameraPlugin, PanOrbitCameraBundle, PanOrbitState};
 
 pub struct ShipPlugin;
 
@@ -274,8 +275,15 @@ fn cleanup_ships(mut commands: Commands, query: Query<Entity, With<Ship>>) {
     commands.remove_resource::<ShipSpawnManager>();
 }
 
-fn ship_collide_event(mut ship_collision: EventReader<CollisionEvent>, mut commands: Commands) {
+fn ship_collide_event(mut ship_collision: EventReader<CollisionEvent>,
+                      mut commands: Commands,
+                      transform_query: Query<&Transform, With<PathFollow>>,
+                      mut camera: Single<&mut PanOrbitState>
+) {
     for ev in ship_collision.read() {
-        eprintln!("Entity {:?} collided with {:?}", ev.entity_a, ev.entity_b);
+        println!("Entity {:?} collided with {:?}", ev.entity_a, ev.entity_b);
+        let ship_transform = transform_query.get(ev.entity_a).unwrap();
+        camera.center = ship_transform.translation;
+        camera.radius += 5000.;
     }
 }

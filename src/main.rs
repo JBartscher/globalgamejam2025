@@ -3,7 +3,6 @@ mod map;
 mod ship;
 mod collision;
 mod ui;
-mod interaction;
 
 use bevy::color::palettes::css::WHITE_SMOKE;
 use crate::ship::ShipAssets;
