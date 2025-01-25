@@ -1,3 +1,4 @@
+use std::time::Duration;
 use crate::GameState;
 use bevy::prelude::*;
 use bevy_asset_loader::prelude::*;
@@ -77,6 +78,7 @@ impl Ship {
     }
 }
 
+/// generates a random point in bounds to the map
 fn point_on_map() -> f32{
     let mut rng = rand::thread_rng();
     let rand_num = rng.gen_range(0..=255);
@@ -130,11 +132,37 @@ impl Command for Ship {
     }
 }
 
+#[derive(Resource)]
+struct ShipSpawnManager {
+    spawn_timer: Timer,
+    current_ships: u32,
+    max_ships: u32,
+}
 
-fn spawn_ship(
-    mut commands: Commands
+impl Default for ShipSpawnManager{
+    fn default() -> Self {
+        Self{
+            spawn_timer: Timer::new(Duration::from_secs(5), TimerMode::Repeating),
+            current_ships: 1,
+            max_ships: 5,
+        }
+    }
+}
+
+
+fn spawn_ships(
+    mut commands: Commands,
+    time: Res<Time>,
+    mut spawn_manager: ResMut<ShipSpawnManager>,
 ) {
-    commands.queue(Ship::new(-0.100, -3., 3.0, -2.0, 2.0))
+    spawn_manager.spawn_timer.tick(time.delta());
+
+    // if it finished, despawn the bomb
+    if spawn_manager.spawn_timer.finished() && spawn_manager.current_ships < spawn_manager.max_ships {
+        commands.queue(Ship::new(-0.100, -3., 3.0, -2.0, 2.0));
+        spawn_manager.current_ships += 1;
+    }
+
 }
 
 /// This system uses gizmos to draw the current [`Curve`] by breaking it up into a large number
@@ -173,31 +201,22 @@ pub fn update_ships(
     for (ship, mut transform, global) in ships.iter_mut() {
         let pos = global.translation();
         ship.update(&water, pos, &mut transform);
-
-        // // front
-        // gizmos.arrow(ship.front + transform.translation, ship.front + transform.translation + Vec3::new(0., 10., 0.), YELLOW);
-        // // back left
-        // gizmos.arrow(
-        //     ship.back_left + transform.translation,
-        //     ship.back_left + transform.translation + Vec3::new(0., 10., 0.),
-        //     YELLOW,
-        // );
-        // // back right
-        // gizmos.arrow(
-        //     ship.back_right + transform.translation,
-        //     ship.back_right + transform.translation + Vec3::new(0., 10., 0.),
-        //     YELLOW,
-        // );
     }
 }
 
 impl Plugin for ShipPlugin {
     fn build(&self, app: &mut App) {
         app
-            .add_systems(OnEnter(GameState::Game), spawn_ship)
+            .add_systems(OnEnter(GameState::Game), setup)
+            .add_systems(Update, spawn_ships.run_if(in_state(GameState::Game)))
             .add_systems(Update, update_ships.run_if(in_state(GameState::Game)))
             .add_systems(Update, draw_follow_path.run_if(in_state(GameState::Game)))
             .add_systems(Update, move_ship.run_if(in_state(GameState::Game)))
         ;
     }
+}
+
+fn setup( mut commands: Commands,){
+    commands.queue(Ship::new(-0.100, -3., 3.0, -2.0, 2.0));
+    commands.init_resource::<ShipSpawnManager>();
 }
